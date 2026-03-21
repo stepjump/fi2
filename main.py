@@ -162,6 +162,7 @@ async def update_post(post_id: int, request: PostUpdate):
     except HTTPException as he: raise he
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
+
 # [삭제] 비밀번호 확인 후 Soft Delete
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: int, request: PasswordRequest):
@@ -176,6 +177,77 @@ async def delete_post(post_id: int, request: PasswordRequest):
         return {"message": "삭제 성공"}
     except HTTPException as he: raise he
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
+
+
+class CommentCreate(BaseModel):
+    content: str
+    password: str
+    author: Optional[str] = "익명"
+
+# [댓글 생성] 특정 게시물에 댓글 달기
+@app.post("/posts/{post_id}/comments")
+async def create_comment(post_id: int, comment: CommentCreate):
+    try:
+        # 1. 데이터 준비 및 비밀번호 해싱
+        comment_data = comment.model_dump()
+        comment_data["post_id"] = post_id
+        comment_data["password"] = hash_password(comment.password)
+        
+        # 2. Supabase 삽입
+        response = supabase.table("comments").insert(comment_data).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=400, detail="댓글 저장에 실패했습니다.")
+            
+        return {"message": "댓글이 등록되었습니다.", "data": response.data[0]}
+    except Exception as e:
+        print(f"Comment Error: {e}")
+        raise HTTPException(status_code=500, detail=f"댓글 작성 오류: {str(e)}")
+
+# [댓글 삭제] 게시물 ID와 댓글 ID를 모두 확인하여 삭제
+@app.delete("/posts/{post_id}/comments/{comment_id}")
+async def delete_comment(
+    post_id: int = Path(..., description="해당 게시물의 ID"),
+    comment_id: int = Path(..., description="삭제할 댓글의 ID"),
+    request: PasswordRequest = Body(...)
+):
+    try:
+        # 1. DB에서 해당 게시물의 해당 댓글이 존재하는지 + 비밀번호 조회
+        # .eq("post_id", post_id) 조건을 추가하여 엉뚱한 게시물의 댓글 삭제 방지
+        res = supabase.table("comments") \
+            .select("password") \
+            .eq("id", comment_id) \
+            .eq("post_id", post_id) \
+            .execute()
+        
+        if not res.data:
+            raise HTTPException(
+                status_code=404, 
+                detail="해당 게시물에 일치하는 댓글이 없거나 이미 삭제되었습니다."
+            )
+        
+        hashed_db_password = res.data[0]["password"]
+        
+        # 2. 비밀번호 검증 (사용자 입력 평문 vs DB 해시값)
+        if not verify_password(request.password, hashed_db_password):
+            raise HTTPException(status_code=403, detail="비밀번호가 일치하지 않습니다.")
+        
+        # 3. 모든 조건 충족 시 삭제 실행
+        supabase.table("comments") \
+            .delete() \
+            .eq("id", comment_id) \
+            .eq("post_id", post_id) \
+            .execute()
+        
+        return {"message": "댓글이 성공적으로 삭제되었습니다."}
+        
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print(f"❌ Comment Delete Error: {e}")
+        raise HTTPException(status_code=500, detail=f"댓글 삭제 중 오류 발생: {str(e)}")
+
+
 
 if __name__ == "__main__":
     import uvicorn
