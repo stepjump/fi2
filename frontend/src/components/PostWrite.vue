@@ -35,7 +35,7 @@ const post = ref({
   title: '',
   content: '',
   password: '',
-  parent_id: 0 
+  parent_id: null
 });
 
 const submitPost = async () => {

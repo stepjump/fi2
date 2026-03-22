@@ -134,18 +134,24 @@ async def get_post_detail(post_id: int = Path(..., description="조회할 글 ID
     except HTTPException as he: raise he
     except Exception as e: raise HTTPException(status_code=500, detail=str(e))
 
-# [생성] 새 글 또는 답변 작성
 @app.post("/posts")
 async def create_post(post: PostCreate):
     try:
-        post_dict = post.model_dump() # Pydantic v2 기준 (안되면 .dict() 사용)
-        post_dict["password"] = hash_password(post.password)
-        post_dict["delete_yn"] = ""
+        post_dict = post.model_dump()
         
-        response = supabase.table("posts").insert(post_dict).execute()
-        return {"message": "작성 성공", "id": response.data[0]["id"]}
+        # parent_id가 0이거나 없을 경우 처리
+        if post_dict.get("parent_id") == 0 or post_dict.get("parent_id") is None:
+            post_dict["parent_id"] = None  # DB에 NULL로 들어감
+            
+        post_dict["password"] = hash_password(post.password)
+        post_dict["delete_yn"] = "N"  # 기본값 설정
+        
+        res = supabase.table("posts").insert(post_dict).execute()
+        return {"message": "작성 성공", "data": res.data[0]}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"작성 오류: {str(e)}")
+        # 에러 로그 출력 (Vercel 로그에서 확인 가능)
+        print(f"Insert Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # [수정] 비밀번호 확인 후 제목/내용 변경
 @app.put("/posts/{post_id}")
