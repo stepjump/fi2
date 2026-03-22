@@ -32,8 +32,46 @@ GitHub Repository : https://github.com/stepjump/fi2
 
 =========================================================================
 =========================================================================
-프론트엔드
+DB 서비스
 =========================================================================
-게시판 저장 DB : (1) 무료로 사용가능한 DB 서비스를 이용하고 싶어.
+https://supabase.com/
+https://supabase.com/dashboard/project/mgtexfwpwxrxbcajqcrn
+
+[Data API] - [Project URL]
+https://femdssrrbrxnmwxtphtc.supabase.co
+
+[Data API] - [Publishable Key]
+sb_publishable_hUNNShgy6EMQJxfIzr9uvw_nKyah38D
+
+[Database] - [Direct connection string]
+postgresql://postgres:[Guhb7312!!!]@db.femdssrrbrxnmwxtphtc.supabase.co:5432/postgres
+
+
+게시판 저장 DB : (1) 무료로 사용가능한 DB 서비스를 이용하고 싶어. ===> Supabase 이용.   암호 : Guhb7312!!!
 
 =========================================================================
+
+
+
+
+
+=========================================================================
+
+DB 연결 코드 작성: 선택하신 DB(예: Supabase)와 Python을 연결하는 기본 코드를 짜드릴까요?
+
+	DB 접속 정보는 보안을 위해 별도 파일로 관리합니다. Supabase 프로젝트 설정에서 URI를 확인해 입력하세요.
+	# .env 파일 내용
+	DATABASE_URL=postgresql+asyncpg://user:password@db_host:5432/postgres
+
+=========================================================================
+=========================================================================
+
+백엔드 서비스 api 목록
+
+(1)
+
+
+=========================================================================
+
+
+
